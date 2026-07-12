@@ -6,7 +6,7 @@ Streamlit 製の純粋な Python アプリ(notebook 不使用)。
 ## セットアップ
 
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 earthengine authenticate   # 初回のみ(個人利用)
@@ -39,7 +39,10 @@ requirements.txt
 
 - 表示は `getMapId()` のタイルURLを folium に貼る方式。ピクセルを
   ダウンロードしないため高速で、ズーム・パンも自由。
-- numpy 等での解析処理(k-means、Canny など)を将来追加する場合のみ
+- k-means クラスタリングと Canny 法による海岸線抽出は EE サーバー側の
+  組み込み(`ee.Clusterer` / `ee.Algorithms.CannyEdgeDetector`)で実装済み。
+  ピクセル取得は発生しない。
+- numpy 等が必要な独自解析を将来追加する場合のみ
   `getInfo()`/`sampleRectangle()` でピクセル取得する。
 
 ## 一般公開する場合(将来)
