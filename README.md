@@ -118,7 +118,11 @@ docs/
   requirements.md      # 要求一覧・ロードマップ(何を作るか)
   design.md            # 設計書(どう作るか・Mermaid図つき)
   tasks.md             # 未着手タスクの一覧
+CONTRIBUTING.md        # 開発の進め方(SDD + AI駆動開発)
+CLAUDE.md              # AI(Claude Code)向けの常設指示
 ```
+
+開発に参加する(人間・AI とも)場合は [CONTRIBUTING.md](CONTRIBUTING.md) を参照。
 
 ## 設計メモ
 
