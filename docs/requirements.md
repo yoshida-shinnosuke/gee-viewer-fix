@@ -16,7 +16,7 @@ GEE API が提供する操作をひとつずつ GUI の選択肢に対応付け�
 | `ee.ImageCollection(id)` | データセット選択(常設17件 + STAC全件) | 対応済 |
 | `ee.Image(id)` | 同上(単一Image も判別して扱う) | 対応済 |
 | `.filterDate()` | 期間の指定(提供期間から初期値を自動補正) | 対応済 |
-| `.filterBounds()` | 中心座標 + 領域サイズ | 対応済 |
+| `.filterBounds()` | 中心座標 + 領域サイズ(中心は場所名検索でも指定可 / OSM Nominatim) | 対応済 |
 | `.filter(ee.Filter...)` | 雲量上限、軌道方向 | 一部 |
 | `.map(雲マスク)` | 雲マスクのオン/オフ(S2 / Landsat / MODIS) | 一部 |
 | `.median()` `.mean()` 等 | 期間の合成方法(6種) | 対応済 |
