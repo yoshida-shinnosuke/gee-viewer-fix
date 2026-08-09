@@ -8,8 +8,9 @@
 
 ## 1. 地図上での領域描画(`ee.Geometry`)— 最優先
 
-- **現状**: [app.py](../app.py) の緯度・経度・半径の数値入力(`lat` / `lon`)のみ。
-  `filterBounds()` に渡す領域はここから矩形として組み立てている。
+- **現状**: [app.py](../app.py) の緯度・経度・半径の数値入力と、場所名検索
+  (OSM Nominatim、[geocode.py](../gee_viewer/geocode.py))。いずれも領域の形は
+  「中心 + 半径の矩形」に限られ、`filterBounds()` にはそれを渡している。
 - **やりたいこと**: 地図上でポリゴン/矩形を描いて `ee.Geometry` として使えるようにする。
 - **影響範囲**: app.py の領域選択UI、[pipeline.py](../gee_viewer/pipeline.py) の
   `filterBounds` 呼び出し、[codegen.py](../gee_viewer/codegen.py) の書き出しコード

@@ -18,7 +18,7 @@ import folium
 import streamlit as st
 from streamlit_folium import st_folium
 
-from gee_viewer import analyses, auth, codegen, pipeline, recipes, sources, stac, ui
+from gee_viewer import analyses, auth, codegen, geocode, pipeline, recipes, sources, stac, ui
 
 st.set_page_config(page_title="GEE Viewer", page_icon="🌍", layout="wide")
 
@@ -244,9 +244,58 @@ else:
     st.sidebar.caption("このデータセットは時間軸を持たないため期間指定は無視されます。")
     start_date, end_date = date(2000, 1, 1), date.today()
 
+if "lat" not in st.session_state:
+    st.session_state.lat = 35.545
+if "lon" not in st.session_state:
+    st.session_state.lon = 134.225
+
+
+def _apply_geocode_search(query: str) -> None:
+    """「検索」ボタンが押されたときの処理。1位の候補へ緯度経度を移動する。
+
+    複数候補は st.session_state.geocode_results に残しておき、
+    下の selectbox で選び直せるようにする。
+    """
+    if not query.strip():
+        st.sidebar.warning("場所名を入力してください。")
+        st.session_state.geocode_results = ()
+        return
+    try:
+        results = geocode.search(query)
+    except Exception as e:
+        st.sidebar.error(f"検索に失敗しました(OpenStreetMap Nominatim): {e}")
+        st.session_state.geocode_results = ()
+        return
+    st.session_state.geocode_results = results
+    if not results:
+        st.sidebar.warning("見つかりませんでした。表記を変えて試してください。")
+        return
+    st.session_state.lat = results[0].lat
+    st.session_state.lon = results[0].lon
+
+
+st.sidebar.caption("場所名で検索するか、下で緯度・経度を直接指定してください。")
+place_query = st.sidebar.text_input(
+    "場所を検索 (OpenStreetMap)", placeholder="例: 鳥取砂丘"
+)
+if st.sidebar.button("検索"):
+    _apply_geocode_search(place_query)
+
+geocode_results = st.session_state.get("geocode_results") or ()
+if len(geocode_results) > 1:
+    picked_place = st.sidebar.selectbox(
+        "候補が複数あります。違う場所ならこちらから選択:",
+        geocode_results,
+        format_func=lambda p: p.name,
+        key="geocode_pick",
+    )
+    if st.sidebar.button("この候補を使う"):
+        st.session_state.lat = picked_place.lat
+        st.session_state.lon = picked_place.lon
+
 st.sidebar.caption("初期値は鳥取砂丘。数値を変えると移動します。")
-lat = st.sidebar.number_input("緯度", value=35.545, format="%.4f")
-lon = st.sidebar.number_input("経度", value=134.225, format="%.4f")
+lat = st.sidebar.number_input("緯度", key="lat", format="%.4f")
+lon = st.sidebar.number_input("経度", key="lon", format="%.4f")
 buffer_km = st.sidebar.slider("領域サイズ (km)", 1, 50, 5)
 zoom = st.sidebar.slider("ズーム", 8, 16, 13)
 

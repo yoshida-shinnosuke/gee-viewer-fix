@@ -113,6 +113,7 @@ gee_viewer/
   codegen.py           # .py / .ipynb の書き出し
   ui.py                # ParamSpec → ウィジェット
   auth.py              # EE認証
+  geocode.py           # 場所名検索 (OSM Nominatim)
 docs/
   vision.md            # 目的と方針(なぜ作るか)
   requirements.md      # 要求一覧・ロードマップ(何を作るか)
