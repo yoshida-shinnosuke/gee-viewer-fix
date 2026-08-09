@@ -2,7 +2,8 @@
 
 このドキュメントは「何を作るか」を GEE API 単位で管理する要求一覧。
 なぜ作るか・判断に迷ったときの基準は [vision.md](vision.md)、
-どう作っているかは [architecture.md](architecture.md) を参照。
+どう作っているかは [design.md](design.md)、
+未着手分のタスク分解は [tasks.md](tasks.md) を参照。
 
 管理方針は [vision.md](vision.md) の方針1「GEE API をトレースする」に従う。
 GEE API が提供する操作をひとつずつ GUI の選択肢に対応付けていき、
@@ -35,7 +36,7 @@ GEE API が提供する操作をひとつずつ GUI の選択肢に対応付け�
 | 自由なバンド演算式の入力 | — | 未着手 |
 
 コード書き出しが「画面の絵」とズレないための実装は
-[architecture.md の「コード書き出し」](architecture.md#コード書き出し)を参照。
+[design.md の「コード書き出し」](design.md#コード書き出し)を参照。
 
 ## 次に埋めるべきギャップ
 
@@ -43,3 +44,5 @@ GEE API が提供する操作をひとつずつ GUI の選択肢に対応付け�
 しかなく、「この範囲を見たい」という最も自然な操作が GUI でできない。
 GUI で完結させるという [vision.md](vision.md) の目的に対して、
 ここが一番大きな穴になっている。
+
+上記「未着手」の各行をタスクとして分解したものは [tasks.md](tasks.md) を参照。

@@ -116,7 +116,8 @@ gee_viewer/
 docs/
   vision.md            # 目的と方針(なぜ作るか)
   requirements.md      # 要求一覧・ロードマップ(何を作るか)
-  architecture.md      # 設計書(どう作るか・Mermaid図つき)
+  design.md            # 設計書(どう作るか・Mermaid図つき)
+  tasks.md             # 未着手タスクの一覧
 ```
 
 ## 設計メモ
@@ -131,9 +132,10 @@ docs/
 - numpy/cv2 が必要な独自解析を将来入れる場合のみ、`sampleRectangle()` 等で
   ピクセルを取得することになる(領域サイズとズームに制約が付く)。
 
-詳細は [docs/architecture.md](docs/architecture.md) を参照。
+詳細は [docs/design.md](docs/design.md) を参照。
 なぜこの設計なのかは [docs/vision.md](docs/vision.md) に目的と紐づけて記録している。
-何を作るか(要求一覧・ロードマップ)は [docs/requirements.md](docs/requirements.md) を参照。
+何を作るか(要求一覧・ロードマップ)は [docs/requirements.md](docs/requirements.md)、
+未着手タスクは [docs/tasks.md](docs/tasks.md) を参照。
 
 ## 未対応(次にやりたいこと)
 
