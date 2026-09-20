@@ -55,6 +55,9 @@ def init_ee() -> str:
 
 try:
     auth_mode = init_ee()
+except auth.ProjectNotSetError as e:
+    st.error(str(e))
+    st.stop()
 except Exception as e:
     st.error(
         "Earth Engine の初期化に失敗しました。ローカル利用の場合は "
@@ -454,7 +457,7 @@ if not export_layers:
     st.info("書き出すレイヤーがありません。レイヤーを固定するか、上のチェックを入れてください。")
 else:
     st.caption("書き出し対象:\n\n" + codegen.describe(export_layers))
-    args = (export_layers, lon, lat, buffer_km, zoom, auth.DEFAULT_PROJECT)
+    args = (export_layers, lon, lat, buffer_km, zoom)
     try:
         script = codegen.generate_py(*args)
         notebook = codegen.generate_ipynb(*args)
