@@ -41,3 +41,30 @@
   [analyses.py](../gee_viewer/analyses.py))。
 - `ee.Image.expression()` の自由記述UIを検討。[vision.md](vision.md) の方針2
   「壊れた組み合わせを作らせない」との両立(自由記述は原理的にエラーを防げない)が課題。
+
+## 6. EE プロジェクトIDのハードコード解消 — 着手中
+
+- **現状**: [auth.py](../gee_viewer/auth.py) の `DEFAULT_PROJECT` が
+  `os.environ.get("EE_PROJECT", "ee-naoki")` で、未設定時に作者個人の
+  GCP プロジェクトIDを使う。他メンバーは `EE_PROJECT` を設定しないと動かず
+  (権限エラーになる)、書き出しコードにも `ee-naoki` が混ざる。
+- **やりたいこと**: 既定値を廃止し、プロジェクトIDは各自の環境変数 `EE_PROJECT` で指定する。
+- **仕様**:
+  - 個人認証で `EE_PROJECT` が未設定なら、初期化せずエラーで止める。画面には
+    原因と解決方法(`.env` の作り方、`export`、VS Code デバッグでの読み込み)を表示する。
+  - サービスアカウント認証(secrets / `EE_SERVICE_ACCOUNT_JSON`)は従来どおり。
+    プロジェクトIDは資格情報から決まるため `EE_PROJECT` は不要。
+  - `.env.sample` を置く(`EE_PROJECT=your-gcp-project-id`)。各自 `.env` にコピーして使う。
+    `.env` は `.gitignore` に追加する。
+  - VS Code のデバッグ起動([launch.json](../.vscode/launch.json))は `envFile` で `.env` を読む。
+  - 書き出しコードの `ee.Initialize(project=...)` には、実行時の `EE_PROJECT` の値が入る。
+- **影響範囲**: [auth.py](../gee_viewer/auth.py)(既定値の廃止・未設定エラー)、
+  [app.py](../app.py)(エラー表示、`codegen` へ渡すプロジェクトID)、
+  `.env.sample`(新規)、`.gitignore`、`.vscode/launch.json`、
+  README(セットアップ手順)、[design.md](design.md)(auth の説明)。
+- **受け入れ確認**:
+  1. `EE_PROJECT` 未設定で起動 → エラーと解決方法が画面に出る
+  2. `.env` を用意して起動 / デバッグ起動 → 地図が表示される
+  3. 書き出したコードに `ee-naoki` が含まれない
+- **未決**: 書き出しコードに利用者自身のプロジェクトIDをそのまま入れる(上記仕様)か、
+  プレースホルダ(`your-gcp-project-id`)にするか。前者を暫定とする。
