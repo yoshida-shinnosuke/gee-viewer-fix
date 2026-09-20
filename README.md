@@ -28,19 +28,14 @@ cp .env.sample .env        # 中の EE_PROJECT を自分の GCP プロジェク�
 ```
 
 `EE_PROJECT` は個人認証のとき必須で、既定値は無い(未設定だと画面にエラーと
-設定方法が出る)。`.env` は `.gitignore` 済みでコミットされない。
+設定方法が出る)。`.env`(プロジェクト直下、`.gitignore` 済み)はアプリが起動時に
+自動で読み込む。シェルで `export EE_PROJECT=...` した値があれば、そちらが優先される。
 
 ## 起動
 
-`.env` を環境変数として読み込んでから起動する。
-
 ```bash
-set -a; source .env; set +a
 streamlit run app.py
 ```
-
-(`.env` は自動では読み込まれない。VS Code のデバッグ起動は
-[launch.json](.vscode/launch.json) の `envFile` が読み込む。)
 
 ## デバッグ(VS Code)
 
