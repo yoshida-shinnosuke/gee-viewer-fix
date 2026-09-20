@@ -6,10 +6,12 @@ venv/
 
 # Streamlit secrets (サービスアカウント鍵などを含むため必ず除外)
 .streamlit/secrets.toml
+.env
 *.json.key
 service_account*.json
 
 # OS / editor
 .DS_Store
-.vscode/
+.vscode/*
+!.vscode/launch.json
 .idea/

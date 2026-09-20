@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any, Callable, Literal
 
@@ -281,11 +282,13 @@ def build(
     return img, vis, kind
 
 
-def compatible_recipes(src: Source, recipes) -> list[Recipe]:
+def compatible_recipes(src: Source, recipes: Iterable[Recipe]) -> list[Recipe]:
     """Source が持つ役割で実行できる Recipe だけを返す。"""
     return [r for r in recipes if r.requires <= set(src.roles)]
 
 
-def compatible_analyses(kind: Kind, analyses) -> list[Analysis]:
+def compatible_analyses(
+    kind: Kind, analyses: Iterable[Analysis]
+) -> list[Analysis]:
     """入力画像の形と相性が合う Analysis だけを返す。"""
     return [a for a in analyses if a.accepts in ("any", kind)]

@@ -62,6 +62,7 @@ flowchart TB
         stac["stac.py<br/>STACから Source を自動生成"]
         uimod["ui.py<br/>ParamSpec → ウィジェット"]
         codegen["codegen.py<br/>.py / .ipynb を書き出し"]
+        geocode["geocode.py<br/>場所名→緯度経度"]
     end
 
     ee_api["Earth Engine API"]
@@ -69,11 +70,12 @@ flowchart TB
 
     app --> pipeline
     app --> sources & recipes & analyses
-    app --> auth & uimod & codegen
+    app --> auth & uimod & codegen & geocode
     sources --> stac
     codegen --> pipeline
     sources & recipes & analyses --> pipeline
     stac -->|"HTTP (認証不要)"| stac_json[("GEE STAC<br/>カタログJSON")]
+    geocode -->|"HTTP (認証不要)"| nominatim[("OSM Nominatim<br/>ジオコーディングAPI")]
     pipeline -->|"ee.Image 構築(遅延評価)"| ee_api
     app -->|"getMapId() → タイルURL"| ee_api
     app --> browser
@@ -90,7 +92,8 @@ flowchart TB
 | [stac.py](../gee_viewer/stac.py) | GEE の STAC カタログから任意データセットの `Source` を自動生成 |
 | [codegen.py](../gee_viewer/codegen.py) | パイプライン定義から実行可能な `.py` / `.ipynb` を生成 |
 | [ui.py](../gee_viewer/ui.py) | `ParamSpec` から Streamlit ウィジェットを生成 |
-| [auth.py](../gee_viewer/auth.py) | EE 認証。サービスアカウント → 個人認証のフォールバック |
+| [auth.py](../gee_viewer/auth.py) | EE 認証。サービスアカウント → 個人認証のフォールバック。個人認証のプロジェクトIDは環境変数 `EE_PROJECT`(既定値なし。未設定は `ProjectNotSetError`)。プロジェクト直下の `.env` は自前の最小パーサで読む(追加パッケージなし、設定済みの環境変数を優先) |
+| [geocode.py](../gee_viewer/geocode.py) | 場所名から緯度経度への変換(OSM Nominatim)。サイドバーの場所検索の裏側 |
 
 ## 要: バンドの「役割」への正規化
 

@@ -24,13 +24,43 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 earthengine authenticate   # 初回のみ(個人利用)
+cp .env.sample .env        # 中の EE_PROJECT を自分の GCP プロジェクトIDに書き換える
 ```
+
+`EE_PROJECT` は個人認証のとき必須で、既定値は無い(未設定だと画面にエラーと
+設定方法が出る)。`.env`(プロジェクト直下、`.gitignore` 済み)はアプリが起動時に
+自動で読み込む。シェルで `export EE_PROJECT=...` した値があれば、そちらが優先される。
 
 ## 起動
 
 ```bash
 streamlit run app.py
 ```
+
+## デバッグ(VS Code)
+
+[.vscode/launch.json](.vscode/launch.json) に起動構成「Streamlit app」を用意してある。
+`streamlit run app.py` をデバッガ配下で起動する(ポートは 8511)。
+
+1. 「実行とデバッグ」(⇧⌘D)で「Streamlit app」を選び、F5 で起動する
+2. `http://localhost:8511` を開く
+3. **ブラウザで画面が表示されてから**ブレークポイントを置く。パイプラインを追うなら `app.py` の
+   `pipeline.build(` の行が入口になる。そこから F11 でステップインすると
+   `recipe.build` → `analysis.build` の順に辿れる
+
+注意点:
+
+- 起動前・画面が表示される前にブレークポイントを置かない。起動処理の途中で
+  止まり、ステップ実行が意図しない場所(モジュール読み込み中の行など)に
+  飛ぶことがある。置いてあった場合は、いったん外して起動し直す
+- Streamlit は操作のたびに `app.py` を先頭から再実行する。ブレークポイントには
+  UI を操作した時点で到達する(例: 解析に k-means を選ぶと `_kmeans` に止まる)
+- `ee.Image` などは Earth Engine に送る計算式を組み立てているだけで、
+  デバッガで見ても値は入っていない。確認できるのは呼ばれる順序、`params` /
+  `ctx` の中身、組み立てられる計算式まで。実際の計算はタイルが要求された時に
+  サーバー側で走る
+- `launch.json` は macOS / Linux の `venv/bin/python` を前提にしている。
+  Windows では `venv/Scripts/python` に読み替える
 
 ## 使えるデータセット
 
@@ -113,12 +143,17 @@ gee_viewer/
   codegen.py           # .py / .ipynb の書き出し
   ui.py                # ParamSpec → ウィジェット
   auth.py              # EE認証
+  geocode.py           # 場所名検索 (OSM Nominatim)
 docs/
   vision.md            # 目的と方針(なぜ作るか)
   requirements.md      # 要求一覧・ロードマップ(何を作るか)
   design.md            # 設計書(どう作るか・Mermaid図つき)
   tasks.md             # 未着手タスクの一覧
+CONTRIBUTING.md        # 開発の進め方(SDD + AI駆動開発)
+CLAUDE.md              # AI(Claude Code)向けの常設指示
 ```
+
+開発に参加する(人間・AI とも)場合は [CONTRIBUTING.md](CONTRIBUTING.md) を参照。
 
 ## 設計メモ
 
@@ -153,6 +188,6 @@ docs/
 2. または環境変数 `EE_SERVICE_ACCOUNT_JSON` に鍵ファイルのパスを設定
 
 [gee_viewer/auth.py](gee_viewer/auth.py) がサービスアカウントを優先して使用する。
-個人利用時のGCPプロジェクトは環境変数 `EE_PROJECT` で変更可能(既定: `ee-naoki`)。
+サービスアカウント認証ではプロジェクトが資格情報から決まるため、`EE_PROJECT` は不要。
 
 **注意**: 鍵ファイルや secrets.toml は絶対にコミットしないこと(.gitignore 済み)。

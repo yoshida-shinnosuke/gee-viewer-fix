@@ -13,10 +13,11 @@ GEE API が提供する操作をひとつずつ GUI の選択肢に対応付け�
 
 | GEE API / 機能 | GUI での対応 | 状況 |
 | --- | --- | --- |
+| `ee.Initialize(project=...)` | 環境変数 `EE_PROJECT`(または `.env`)でGCPプロジェクトを指定(既定値なし)。未設定なら原因と設定方法を画面に表示 | 対応済 |
 | `ee.ImageCollection(id)` | データセット選択(常設17件 + STAC全件) | 対応済 |
 | `ee.Image(id)` | 同上(単一Image も判別して扱う) | 対応済 |
 | `.filterDate()` | 期間の指定(提供期間から初期値を自動補正) | 対応済 |
-| `.filterBounds()` | 中心座標 + 領域サイズ | 対応済 |
+| `.filterBounds()` | 中心座標 + 領域サイズ(中心は場所名検索でも指定可 / OSM Nominatim) | 対応済 |
 | `.filter(ee.Filter...)` | 雲量上限、軌道方向 | 一部 |
 | `.map(雲マスク)` | 雲マスクのオン/オフ(S2 / Landsat / MODIS) | 一部 |
 | `.median()` `.mean()` 等 | 期間の合成方法(6種) | 対応済 |
