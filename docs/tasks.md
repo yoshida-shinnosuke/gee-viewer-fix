@@ -57,14 +57,14 @@
   - `.env.sample` を置く(`EE_PROJECT=your-gcp-project-id`)。各自 `.env` にコピーして使う。
     `.env` は `.gitignore` に追加する。
   - VS Code のデバッグ起動([launch.json](../.vscode/launch.json))は `envFile` で `.env` を読む。
-  - 書き出しコードの `ee.Initialize(project=...)` には、実行時の `EE_PROJECT` の値が入る。
+  - 書き出しコードの `ee.Initialize(project=...)` にはプレースホルダ
+    `your-gcp-project-id` を入れる(利用者個人のIDをコードに埋め込まない。
+    書き出したコードを他人に渡しても個人情報が混ざらない)。実行前に自分のIDへ書き換える。
 - **影響範囲**: [auth.py](../gee_viewer/auth.py)(既定値の廃止・未設定エラー)、
-  [app.py](../app.py)(エラー表示、`codegen` へ渡すプロジェクトID)、
+  [app.py](../app.py)(エラー表示)、[codegen.py](../gee_viewer/codegen.py)(プレースホルダ)、
   `.env.sample`(新規)、`.gitignore`、`.vscode/launch.json`、
   README(セットアップ手順)、[design.md](design.md)(auth の説明)。
 - **受け入れ確認**:
   1. `EE_PROJECT` 未設定で起動 → エラーと解決方法が画面に出る
   2. `.env` を用意して起動 / デバッグ起動 → 地図が表示される
-  3. 書き出したコードに `ee-naoki` が含まれない
-- **未決**: 書き出しコードに利用者自身のプロジェクトIDをそのまま入れる(上記仕様)か、
-  プレースホルダ(`your-gcp-project-id`)にするか。前者を暫定とする。
+  3. 書き出したコードに `ee-naoki` や `EE_PROJECT` の値が含まれず、`your-gcp-project-id` になっている
