@@ -11,5 +11,6 @@ service_account*.json
 
 # OS / editor
 .DS_Store
-.vscode/
+.vscode/*
+!.vscode/launch.json
 .idea/
