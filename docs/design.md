@@ -92,7 +92,7 @@ flowchart TB
 | [stac.py](../gee_viewer/stac.py) | GEE の STAC カタログから任意データセットの `Source` を自動生成 |
 | [codegen.py](../gee_viewer/codegen.py) | パイプライン定義から実行可能な `.py` / `.ipynb` を生成 |
 | [ui.py](../gee_viewer/ui.py) | `ParamSpec` から Streamlit ウィジェットを生成 |
-| [auth.py](../gee_viewer/auth.py) | EE 認証。サービスアカウント → 個人認証のフォールバック。個人認証のプロジェクトIDは環境変数 `EE_PROJECT`(既定値なし。未設定は `ProjectNotSetError`) |
+| [auth.py](../gee_viewer/auth.py) | EE 認証。サービスアカウント → 個人認証のフォールバック。個人認証のプロジェクトIDは環境変数 `EE_PROJECT`(既定値なし。未設定は `ProjectNotSetError`)。プロジェクト直下の `.env` は自前の最小パーサで読む(追加パッケージなし、設定済みの環境変数を優先) |
 | [geocode.py](../gee_viewer/geocode.py) | 場所名から緯度経度への変換(OSM Nominatim)。サイドバーの場所検索の裏側 |
 
 ## 要: バンドの「役割」への正規化
