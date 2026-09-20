@@ -37,6 +37,20 @@ cp .env.sample .env        # 中の EE_PROJECT を自分の GCP プロジェク�
 streamlit run app.py
 ```
 
+## 停止
+
+起動したターミナルで **Ctrl+C** を押す。ブラウザのタブを閉じてもサーバーは止まらない。
+
+ターミナルが見つからないときは、ポート番号(既定は 8501)でプロセスを探して止める。
+
+```bash
+lsof -ti :8501            # そのポートを使っているプロセスIDを表示
+kill $(lsof -ti :8501)    # 止める
+```
+
+VS Code のデバッグで起動した場合は、デバッグツールバーの停止ボタン(⇧F5)で止める。
+ポートは 8511 なので、強制停止するときは上のコマンドの番号を読み替える。
+
 ## デバッグ(VS Code)
 
 [.vscode/launch.json](.vscode/launch.json) に起動構成「Streamlit app」を用意してある。
