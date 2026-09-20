@@ -32,6 +32,31 @@ earthengine authenticate   # 初回のみ(個人利用)
 streamlit run app.py
 ```
 
+## デバッグ(VS Code)
+
+[.vscode/launch.json](.vscode/launch.json) に起動構成「Streamlit app」を用意してある。
+`streamlit run app.py` をデバッガ配下で起動する(ポートは 8511)。
+
+1. 「実行とデバッグ」(⇧⌘D)で「Streamlit app」を選び、F5 で起動する
+2. `http://localhost:8511` を開く
+3. **ブラウザで画面が表示されてから**ブレークポイントを置く。パイプラインを追うなら `app.py` の
+   `pipeline.build(` の行が入口になる。そこから F11 でステップインすると
+   `recipe.build` → `analysis.build` の順に辿れる
+
+注意点:
+
+- 起動前・画面が表示される前にブレークポイントを置かない。起動処理の途中で
+  止まり、ステップ実行が意図しない場所(モジュール読み込み中の行など)に
+  飛ぶことがある。置いてあった場合は、いったん外して起動し直す
+- Streamlit は操作のたびに `app.py` を先頭から再実行する。ブレークポイントには
+  UI を操作した時点で到達する(例: 解析に k-means を選ぶと `_kmeans` に止まる)
+- `ee.Image` などは Earth Engine に送る計算式を組み立てているだけで、
+  デバッガで見ても値は入っていない。確認できるのは呼ばれる順序、`params` /
+  `ctx` の中身、組み立てられる計算式まで。実際の計算はタイルが要求された時に
+  サーバー側で走る
+- `launch.json` は macOS / Linux の `venv/bin/python` を前提にしている。
+  Windows では `venv/Scripts/python` に読み替える
+
 ## 使えるデータセット
 
 2つの経路がある。
