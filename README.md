@@ -24,13 +24,23 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 earthengine authenticate   # 初回のみ(個人利用)
+cp .env.sample .env        # 中の EE_PROJECT を自分の GCP プロジェクトIDに書き換える
 ```
+
+`EE_PROJECT` は個人認証のとき必須で、既定値は無い(未設定だと画面にエラーと
+設定方法が出る)。`.env` は `.gitignore` 済みでコミットされない。
 
 ## 起動
 
+`.env` を環境変数として読み込んでから起動する。
+
 ```bash
+set -a; source .env; set +a
 streamlit run app.py
 ```
+
+(`.env` は自動では読み込まれない。VS Code のデバッグ起動は
+[launch.json](.vscode/launch.json) の `envFile` が読み込む。)
 
 ## デバッグ(VS Code)
 
@@ -183,6 +193,6 @@ CLAUDE.md              # AI(Claude Code)向けの常設指示
 2. または環境変数 `EE_SERVICE_ACCOUNT_JSON` に鍵ファイルのパスを設定
 
 [gee_viewer/auth.py](gee_viewer/auth.py) がサービスアカウントを優先して使用する。
-個人利用時のGCPプロジェクトは環境変数 `EE_PROJECT` で変更可能(既定: `ee-naoki`)。
+サービスアカウント認証ではプロジェクトが資格情報から決まるため、`EE_PROJECT` は不要。
 
 **注意**: 鍵ファイルや secrets.toml は絶対にコミットしないこと(.gitignore 済み)。

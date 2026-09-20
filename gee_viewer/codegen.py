@@ -32,6 +32,9 @@ from . import analyses, pipeline, recipes, sources
 from .pipeline import Source
 
 REGION_VAR = "REGION"
+# 書き出しコードに入れる GCP プロジェクトID。利用者個人のIDは埋め込まず、
+# 実行前に各自が書き換える。
+PROJECT_PLACEHOLDER = "your-gcp-project-id"
 
 
 # ------------------------------------------------------------ 補助関数群
@@ -184,7 +187,7 @@ def _layer_code(layer: dict) -> tuple[list[str], list[Callable], bool]:
 # --------------------------------------------------------------- 組み立て
 
 
-def _preamble(layers: list[dict], project: str) -> str:
+def _preamble(layers: list[dict]) -> str:
     described = "\n".join(f"    {i + 1}. {ly['label']}" for i, ly in enumerate(layers))
     return f'''"""GEE Viewer が書き出したコード。
 
@@ -199,12 +202,14 @@ def _preamble(layers: list[dict], project: str) -> str:
 必要なもの:
     pip install earthengine-api folium
     earthengine authenticate   # 初回のみ
+
+実行前に、ee.Initialize の project を自分の GCP プロジェクトIDに書き換える。
 """'''
 
 
-def _setup_lines(project: str, lon: float, lat: float, buffer_km: int) -> list[str]:
+def _setup_lines(lon: float, lat: float, buffer_km: int) -> list[str]:
     return [
-        f"ee.Initialize(project={project!r})",
+        f"ee.Initialize(project={PROJECT_PLACEHOLDER!r})  # 自分のGCPプロジェクトIDに書き換える",
         "",
         f"# 解析領域: 中心 ({lat}, {lon}) から半径 {buffer_km}km の矩形",
         f"{REGION_VAR} = (",
@@ -228,12 +233,12 @@ def _collect_helpers(layers: list[dict]) -> tuple[list[str], bool]:
 
 
 def generate_py(layers: list[dict], lon: float, lat: float, buffer_km: int,
-                zoom: int, project: str) -> str:
+                zoom: int) -> str:
     """folium で地図HTMLを書き出すスクリプトを生成する。"""
     helpers, needs_stretch = _collect_helpers(layers)
 
-    out: list[str] = [_preamble(layers, project), "", "import ee", "import folium", ""]
-    out += _setup_lines(project, lon, lat, buffer_km)
+    out: list[str] = [_preamble(layers), "", "import ee", "import folium", ""]
+    out += _setup_lines(lon, lat, buffer_km)
     out += ["", "", FOLIUM_HELPER_SRC]
     if needs_stretch:
         out += ["", "", AUTO_STRETCH_SRC]
@@ -273,7 +278,7 @@ def generate_py(layers: list[dict], lon: float, lat: float, buffer_km: int,
 
 
 def generate_ipynb(layers: list[dict], lon: float, lat: float, buffer_km: int,
-                   zoom: int, project: str) -> str:
+                   zoom: int) -> str:
     """geemap で対話的に表示するノートブックを生成する。"""
     helpers, needs_stretch = _collect_helpers(layers)
     cells: list[dict] = []
@@ -305,10 +310,12 @@ GUI で組んだ設定をそのまま動くコードにしたもの。
 pip install earthengine-api geemap
 earthengine authenticate   # 初回のみ
 ```
+
+実行前に、最初のコードセルの `ee.Initialize` の `project` を自分の GCP プロジェクトIDに書き換えてください。
 """
     )
 
-    code("import ee\nimport geemap\n\n" + "\n".join(_setup_lines(project, lon, lat, buffer_km)))
+    code("import ee\nimport geemap\n\n" + "\n".join(_setup_lines(lon, lat, buffer_km)))
 
     if helpers or needs_stretch:
         md("## 補助関数")
