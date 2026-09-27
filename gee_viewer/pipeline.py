@@ -212,6 +212,25 @@ def _to_roles(img: ee.Image, roles: dict[str, Band]) -> ee.Image:
     return ee.Image.cat(bands)
 
 
+def filtered_collection(
+    src: Source, region, start: str | None, end: str | None, params: dict
+) -> ee.ImageCollection:
+    """合成に使われるシーンの集合(雲マスク・合成の手前まで)。
+
+    source_image と枚数表示の両方がこれを使うので、「数えた画像」と
+    「実際に合成される画像」は必ず一致する。start/end が None なら期間で
+    絞らない(撮影状況グラフ用)。
+    """
+    col = ee.ImageCollection(src.asset).filterBounds(region)
+    if src.temporal and start is not None and end is not None:
+        col = col.filterDate(start, end)
+    if src.prefilter is not None:
+        col = src.prefilter(col)
+    for f in src.filters:
+        col = f.apply(col, params.get(f.param.name, f.param.default))
+    return col
+
+
 def source_image(
     src: Source, region, start: str, end: str, params: dict
 ) -> ee.Image:
@@ -219,13 +238,7 @@ def source_image(
     if src.asset_type == "image":
         img = ee.Image(src.asset)
     else:
-        col = ee.ImageCollection(src.asset).filterBounds(region)
-        if src.temporal:
-            col = col.filterDate(start, end)
-        if src.prefilter is not None:
-            col = src.prefilter(col)
-        for f in src.filters:
-            col = f.apply(col, params.get(f.param.name, f.param.default))
+        col = filtered_collection(src, region, start, end, params)
         if src.cloud_mask is not None and params.get("cloud_mask", True):
             col = col.map(src.cloud_mask)
         reducer = params.get("reducer", REDUCER_PARAM.default)
