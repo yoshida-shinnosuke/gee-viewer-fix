@@ -390,13 +390,25 @@ def render_monthly_chart(dates: list[str] | None) -> None:
     )
     # 選択中の期間を帯で重ね、グラフのどこを見ているか分かるようにする
     period = pd.DataFrame({"start": [pd.Timestamp(start_date)], "end": [pd.Timestamp(end_date)]})
+    # Vega-Lite の既定の時間軸は「2017」「July」のように年と月名が混在するので、
+    # 表示期間の長さに応じて目盛り間隔と書式を明示する。
+    span_months = len(pd.period_range(min(counts), max(counts), freq="M"))
+    if span_months > 36:
+        step = max(1, span_months // 12 // 12)  # 年の目盛りを最大12本程度に
+        axis = alt.Axis(format="%Y", tickCount={"interval": "year", "step": step})
+    else:
+        step = max(1, span_months // 12)
+        axis = alt.Axis(
+            format="%Y-%m", tickCount={"interval": "month", "step": step}, labelAngle=-45
+        )
     bars = alt.Chart(df).mark_bar().encode(
-        x=alt.X("month:T", title=None),
+        # yearmonth を付けると棒が1か月分の幅になる(付けないと細い線になる)
+        x=alt.X("yearmonth(month):T", title=None, axis=axis),
         y=alt.Y("count:Q", title="枚数"),
         tooltip=[alt.Tooltip("month:T", title="月", format="%Y-%m"), alt.Tooltip("count:Q", title="枚数")],
     )
     band = alt.Chart(period).mark_rect(opacity=0.2, color="orange").encode(
-        x="start:T", x2="end:T"
+        x=alt.X("start:T", axis=axis), x2="end:T"
     )
     st.caption(
         f"月別の撮影枚数(フィルタ適用後、全 {len(dates):,} 枚、{dates[0]} 〜 {dates[-1]})。"
