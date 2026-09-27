@@ -63,6 +63,7 @@ flowchart TB
         uimod["ui.py<br/>ParamSpec → ウィジェット"]
         codegen["codegen.py<br/>.py / .ipynb を書き出し"]
         geocode["geocode.py<br/>場所名→緯度経度"]
+        avail["availability.py<br/>画像の枚数・撮影日"]
     end
 
     ee_api["Earth Engine API"]
@@ -70,7 +71,8 @@ flowchart TB
 
     app --> pipeline
     app --> sources & recipes & analyses
-    app --> auth & uimod & codegen & geocode
+    app --> auth & uimod & codegen & geocode & avail
+    avail --> pipeline
     sources --> stac
     codegen --> pipeline
     sources & recipes & analyses --> pipeline
@@ -94,6 +96,7 @@ flowchart TB
 | [ui.py](../gee_viewer/ui.py) | `ParamSpec` から Streamlit ウィジェットを生成 |
 | [auth.py](../gee_viewer/auth.py) | EE 認証。サービスアカウント → 個人認証のフォールバック。個人認証のプロジェクトIDは環境変数 `EE_PROJECT`(既定値なし。未設定は `ProjectNotSetError`)。プロジェクト直下の `.env` は自前の最小パーサで読む(追加パッケージなし、設定済みの環境変数を優先) |
 | [geocode.py](../gee_viewer/geocode.py) | 場所名から緯度経度への変換(OSM Nominatim)。サイドバーの場所検索の裏側 |
+| [availability.py](../gee_viewer/availability.py) | 選択中の条件に合う画像の枚数と、その地点の撮影日の問い合わせ。サイドバーの枚数表示・月別グラフの裏側 |
 
 ## 要: バンドの「役割」への正規化
 
@@ -165,7 +168,7 @@ STAC には STAC 拡張の `common_name`(blue/red/nir 等)が入っていない�
 ## 処理フロー
 
 ユーザーがサイドバーを操作するたび Streamlit がスクリプト全体を再実行する。
-重い処理は3つのキャッシュで1回だけ実行される。
+重い処理はキャッシュで1回だけ実行される。
 
 ```mermaid
 sequenceDiagram
@@ -199,11 +202,36 @@ sequenceDiagram
 | `@st.cache_resource` | EE 初期化 | プロセスで1回 |
 | `@st.cache_data` | タイルURL取得 | パイプライン定義が同じなら再利用 |
 | `@st.cache_data` | 自動ストレッチの統計値 | 同上 |
+| `@st.cache_data` | 画像の枚数・撮影日 | データセット・フィルタ・領域(・期間)が同じなら再利用 |
 | `functools.lru_cache` | STAC の HTTP 取得 | URL 単位 |
 
 パイプライン定義を関数オブジェクトではなく **JSON 化できる辞書**として持つ
 のがキャッシュの前提になっている。`{"source": "s2_sr", "recipe": "ndwi",
 "analyses": [...]}` のような純粋なデータなので、そのままキャッシュキーにできる。
+
+## 画像の有無の表示
+
+STAC から分かるのはデータセット全体の提供期間だけで、「この場所にいつ画像があるか」は
+分からない。撮影がまばらなデータセット(ASTER・NAIP など)や厳しい雲量フィルタでは、
+期間を変えては空振りする試行錯誤になる。そこでサイドバーの「4. 期間と領域」に次を出す。
+
+- 選択中の期間・領域・フィルタに合う画像の枚数。0 枚なら警告し、前後で画像のある日を案内する
+- その地点の月別撮影枚数グラフ(提供期間全体。選択中の期間を帯で重ねる)
+
+設計上の要点:
+
+- **数える集合と合成する集合を同じ関数で作る。** フィルタ適用までを
+  [`pipeline.filtered_collection()`](../gee_viewer/pipeline.py) に切り出し、
+  `source_image()` と [availability.py](../gee_viewer/availability.py) の両方がこれを使う。
+  「0 枚と出たのに絵が出る」「N 枚と出たのに空」という食い違いを構造的に防ぐ
+  (切り出し前後で `source_image()` の `serialize()` が一致することを確認済み)。
+- **上限付きで数える。** 毎時データ(ERA5 など)は1地点でも数十万枚あり、素直に数えると
+  数分かかる。`limit(5001)` で数え、5,000 枚を超えるものは「常時データがある」とみなして
+  月別集計を省略する。
+- **月への丸めは手元で行う。** `system:time_start` の配列だけを受け取り、Python 側で日付・月に
+  直す。サーバー側で `image.date().format()` を map するより速い。
+- **ピクセル単位の有無は見ない。** シーン単位の判定なので、夜間観測で可視域バンドが空の
+  シーン(ASTER)なども1枚と数える。ピクセル単位の判定は重いため対象外とした。
 
 ## コード書き出し
 
@@ -305,5 +333,6 @@ classDiagram
 | バンド名を役割(red/nir/…)に正規化する | 指数を衛星ごとに書き直さずに済み、衛星の追加が加算的になるから |
 | STAC からデータセットを自動生成する | 常設カタログを手書きしていては GEE の全データセットに届かないから |
 | 各段が要求と出力を宣言し、UI が選択肢を絞る | GUI ではエラーを見せた時点で負けだから(方針2) |
+| 画像の枚数と撮影月を事前に見せる | 空振りの試行錯誤を利用者にさせないため(方針2) |
 | パイプラインを JSON 化可能なデータとして持つ | キャッシュキーになり、かつコード書き出しの素になるから(方針3) |
 | OpenCV 相当の処理も EE サーバー側で実装する | ピクセルを落とさない原則を守るため(方針4) |

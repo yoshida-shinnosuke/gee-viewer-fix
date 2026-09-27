@@ -13,12 +13,14 @@
 import json
 from datetime import date, timedelta
 
+import altair as alt
 import ee
 import folium
+import pandas as pd
 import streamlit as st
 from streamlit_folium import st_folium
 
-from gee_viewer import analyses, auth, codegen, geocode, pipeline, recipes, sources, stac, ui
+from gee_viewer import analyses, auth, availability, codegen, geocode, pipeline, recipes, sources, stac, ui
 
 st.set_page_config(page_title="GEE Viewer", page_icon="🌍", layout="wide")
 
@@ -126,6 +128,24 @@ def tile_url(spec_json: str, lon, lat, buffer_km, start, end, stretch: bool) -> 
     if stretch:
         vis = {**vis, **auto_stretch(spec_json, lon, lat, buffer_km, start, end)}
     return ee.Image(img).clip(region).getMapId(vis)["tile_fetcher"].url_format
+
+
+@st.cache_data(show_spinner=False)
+def scene_count(source_id: str, params_json: str, lon, lat, buffer_km, start, end) -> int:
+    """期間・領域・フィルタに合う画像の枚数(availability.CAP で打ち切り)。"""
+    src_ = sources.resolve(source_id)
+    return availability.count(
+        src_, _region(lon, lat, buffer_km), start, end, json.loads(params_json)
+    )
+
+
+@st.cache_data(show_spinner=False)
+def scene_dates(source_id: str, params_json: str, lon, lat, buffer_km) -> list[str] | None:
+    """その地点の撮影日の一覧(期間は問わない)。多すぎる場合は None。"""
+    src_ = sources.resolve(source_id)
+    return availability.scene_dates(
+        src_, _region(lon, lat, buffer_km), json.loads(params_json)
+    )
 
 
 # ------------------------------------------------------- サイドバー: 第1段
@@ -301,6 +321,76 @@ lat = st.sidebar.number_input("緯度", key="lat", format="%.4f")
 lon = st.sidebar.number_input("経度", key="lon", format="%.4f")
 buffer_km = st.sidebar.slider("領域サイズ (km)", 1, 50, 5)
 zoom = st.sidebar.slider("ズーム", 8, 16, 13)
+
+
+def render_availability(container) -> None:
+    """選択中の条件に合う画像の枚数と、その地点の月別撮影枚数を表示する。
+
+    STAC の提供期間だけでは「この場所にいつ画像があるか」が分からず、
+    撮影がまばらなデータセットでは無言で空の地図になってしまうため。
+    """
+    params_json = json.dumps(source_params, sort_keys=True)
+    try:
+        with container.spinner("画像の有無を確認中..."):
+            n = scene_count(
+                src.id, params_json, lon, lat, buffer_km,
+                str(start_date), str(end_date),
+            )
+            dates = scene_dates(src.id, params_json, lon, lat, buffer_km)
+    except Exception as e:
+        container.caption(f"画像の有無を確認できませんでした: {e}")
+        return
+
+    if n > availability.CAP:
+        container.caption(f"この期間・領域の画像: {availability.CAP:,} 枚以上")
+    elif n > 0:
+        container.caption(f"この期間・領域の画像: {n:,} 枚")
+    else:
+        msg = "この期間・領域・条件に合う画像がありません。"
+        if dates:
+            before, after = availability.nearest_dates(dates, start_date, end_date)
+            hints = []
+            if before:
+                hints.append(f"直前 {before}")
+            if after:
+                hints.append(f"直後 {after}")
+            msg += "\n\n近くで画像がある日: " + " / ".join(hints)
+        elif dates == []:
+            msg += "この地点にはどの時期の画像もありません(雲量上限なども確認してください)。"
+        container.warning(msg)
+
+    if dates is None:
+        container.caption(
+            f"撮影枚数が多いため({availability.CAP:,} 枚超)月別集計は省略しました。"
+            "ほぼ常時データがあります。"
+        )
+        return
+    if not dates:
+        return
+
+    counts = availability.monthly_counts(dates)
+    df = pd.DataFrame(
+        {"month": pd.to_datetime(list(counts)), "count": list(counts.values())}
+    )
+    # 選択中の期間を帯で重ね、グラフのどこを見ているか分かるようにする
+    period = pd.DataFrame({"start": [pd.Timestamp(start_date)], "end": [pd.Timestamp(end_date)]})
+    bars = alt.Chart(df).mark_bar().encode(
+        x=alt.X("month:T", title=None),
+        y=alt.Y("count:Q", title="枚数"),
+        tooltip=[alt.Tooltip("month:T", title="月", format="%Y-%m"), alt.Tooltip("count:Q", title="枚数")],
+    )
+    band = alt.Chart(period).mark_rect(opacity=0.2, color="orange").encode(
+        x="start:T", x2="end:T"
+    )
+    container.caption(
+        f"この地点の月別撮影枚数(全 {len(dates):,} 枚、{dates[0]} 〜 {dates[-1]})。"
+        "橙の帯が選択中の期間。"
+    )
+    container.altair_chart((band + bars).properties(height=140), width="stretch")
+
+
+if src.asset_type == "image_collection" and src.temporal:
+    render_availability(st.sidebar)
 
 st.sidebar.header("5. 表示")
 basemap = st.sidebar.selectbox(
