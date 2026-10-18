@@ -39,11 +39,10 @@ _BLANK_TILE = (
 )
 
 # 地図右上の LayerControl でラジオ選択できる背景地図。
+# CartoDB 系は API key 制約があり、キーを持たない運用では使えないため除外。
 # (表示名, タイル指定, 帰属表示)
 BASEMAPS = (
     ("OpenStreetMap", "OpenStreetMap", "OpenStreetMap"),
-    ("淡色 (CartoDB Positron)", "CartoDB positron", None),
-    ("暗色 (CartoDB DarkMatter)", "CartoDB dark_matter", None),
     (
         "衛星画像 (Esri)",
         "https://server.arcgisonline.com/ArcGIS/rest/services/"
