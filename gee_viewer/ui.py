@@ -14,6 +14,30 @@ import streamlit as st
 from .pipeline import ParamSpec, Source
 
 
+def build_basemap_layers(
+    basemaps: Iterable[tuple[str, str | None, str | None]],
+    selected_name: str,
+) -> list[dict[str, object]]:
+    """背景地図のレイヤー設定を返す。
+
+    背景地図はサイドバーの1つの選択に統一し、地図右上の LayerControl では
+    ベースレイヤーのラジオボタンを出さない。これにより UI の重複と
+    連動不良を避ける。
+    """
+    layers: list[dict[str, object]] = []
+    for name, tiles, attr in basemaps:
+        layers.append(
+            {
+                "name": name,
+                "tiles": tiles,
+                "attr": attr,
+                "show": name == selected_name,
+                "control": False,
+            }
+        )
+    return layers
+
+
 def render_params(
     specs: Iterable[ParamSpec],
     key_prefix: str,

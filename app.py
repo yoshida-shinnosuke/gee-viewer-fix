@@ -425,8 +425,7 @@ availability_ok, availability_dates = (
 st.sidebar.header("5. 表示")
 basemap = st.sidebar.selectbox(
     "背景地図", [b[0] for b in BASEMAPS],
-    help="地図右上のレイヤー選択でも切り替えられます。"
-    "抽出結果だけを見たいときは「背景なし」。",
+    help="背景地図はここで一括管理します。地図右上のベース選択は表示しません。",
 )
 opacity = st.sidebar.slider("不透明度", 0.0, 1.0, 1.0, 0.05)
 stretch = st.sidebar.checkbox(
@@ -482,12 +481,14 @@ if cols[1].button("レイヤーを全消去"):
 # LayerControl 上でラジオボタンとして切り替え・除去できる(既定の
 # folium.Map(tiles=...) は外せない背景として焼き付いてしまう)。
 m = folium.Map(location=[lat, lon], zoom_start=zoom, tiles=None)
-for i, (bm_name, bm_tiles, bm_attr) in enumerate(BASEMAPS):
+for layer in ui.build_basemap_layers(BASEMAPS, basemap):
     folium.TileLayer(
-        tiles=bm_tiles, attr=bm_attr, name=bm_name,
-        overlay=False,  # False = ベース扱い(ラジオ選択)
-        control=True,
-        show=(bm_name == basemap),
+        tiles=layer["tiles"],
+        attr=layer["attr"],
+        name=layer["name"],
+        overlay=False,
+        control=False,
+        show=layer["show"],
     ).add_to(m)
 
 errors: list[str] = []
